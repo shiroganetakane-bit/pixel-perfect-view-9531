@@ -103,6 +103,7 @@ function Detail() {
   }
 
   async function copyHash() {
+    if (!a) return;
     await navigator.clipboard.writeText(a.hash);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
