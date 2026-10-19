@@ -10,53 +10,141 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as BuatRouteImport } from './routes/buat'
-import { Route as KesepakatanIdRouteImport } from './routes/kesepakatan/$id'
+import { Route as MasukRouteImport } from './routes/masuk'
+import { Route as PenyewaRouteImport } from './routes/penyewa'
+import { Route as VerifikasiRouteImport } from './routes/verifikasi'
+import { Route as PemilikIndexRouteImport } from './routes/pemilik/index'
+import { Route as PemilikBuatRouteImport } from './routes/pemilik/buat'
+import { Route as PerjanjianIdIndexRouteImport } from './routes/perjanjian/$id/index'
+import { Route as PerjanjianIdCheckinRouteImport } from './routes/perjanjian/$id/checkin'
+import { Route as PerjanjianIdCheckoutRouteImport } from './routes/perjanjian/$id/checkout'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const BuatRoute = BuatRouteImport.update({
-  id: '/buat',
-  path: '/buat',
+const MasukRoute = MasukRouteImport.update({
+  id: '/masuk',
+  path: '/masuk',
   getParentRoute: () => rootRouteImport,
 } as any)
-const KesepakatanIdRoute = KesepakatanIdRouteImport.update({
-  id: '/kesepakatan/$id',
-  path: '/kesepakatan/$id',
+const PenyewaRoute = PenyewaRouteImport.update({
+  id: '/penyewa',
+  path: '/penyewa',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VerifikasiRoute = VerifikasiRouteImport.update({
+  id: '/verifikasi',
+  path: '/verifikasi',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PemilikIndexRoute = PemilikIndexRouteImport.update({
+  id: '/pemilik/',
+  path: '/pemilik/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PemilikBuatRoute = PemilikBuatRouteImport.update({
+  id: '/pemilik/buat',
+  path: '/pemilik/buat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PerjanjianIdIndexRoute = PerjanjianIdIndexRouteImport.update({
+  id: '/perjanjian/$id/',
+  path: '/perjanjian/$id/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PerjanjianIdCheckinRoute = PerjanjianIdCheckinRouteImport.update({
+  id: '/perjanjian/$id/checkin',
+  path: '/perjanjian/$id/checkin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PerjanjianIdCheckoutRoute = PerjanjianIdCheckoutRouteImport.update({
+  id: '/perjanjian/$id/checkout',
+  path: '/perjanjian/$id/checkout',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/buat': typeof BuatRoute
-  '/kesepakatan/$id': typeof KesepakatanIdRoute
+  '/masuk': typeof MasukRoute
+  '/penyewa': typeof PenyewaRoute
+  '/verifikasi': typeof VerifikasiRoute
+  '/pemilik/buat': typeof PemilikBuatRoute
+  '/pemilik/': typeof PemilikIndexRoute
+  '/perjanjian/$id/checkin': typeof PerjanjianIdCheckinRoute
+  '/perjanjian/$id/checkout': typeof PerjanjianIdCheckoutRoute
+  '/perjanjian/$id/': typeof PerjanjianIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/buat': typeof BuatRoute
-  '/kesepakatan/$id': typeof KesepakatanIdRoute
+  '/masuk': typeof MasukRoute
+  '/penyewa': typeof PenyewaRoute
+  '/verifikasi': typeof VerifikasiRoute
+  '/pemilik/buat': typeof PemilikBuatRoute
+  '/pemilik': typeof PemilikIndexRoute
+  '/perjanjian/$id/checkin': typeof PerjanjianIdCheckinRoute
+  '/perjanjian/$id/checkout': typeof PerjanjianIdCheckoutRoute
+  '/perjanjian/$id': typeof PerjanjianIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/buat': typeof BuatRoute
-  '/kesepakatan/$id': typeof KesepakatanIdRoute
+  '/masuk': typeof MasukRoute
+  '/penyewa': typeof PenyewaRoute
+  '/verifikasi': typeof VerifikasiRoute
+  '/pemilik/buat': typeof PemilikBuatRoute
+  '/pemilik/': typeof PemilikIndexRoute
+  '/perjanjian/$id/checkin': typeof PerjanjianIdCheckinRoute
+  '/perjanjian/$id/checkout': typeof PerjanjianIdCheckoutRoute
+  '/perjanjian/$id/': typeof PerjanjianIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/buat' | '/kesepakatan/$id'
+  fullPaths:
+    | '/'
+    | '/masuk'
+    | '/penyewa'
+    | '/verifikasi'
+    | '/pemilik/buat'
+    | '/pemilik/'
+    | '/perjanjian/$id/checkin'
+    | '/perjanjian/$id/checkout'
+    | '/perjanjian/$id/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/buat' | '/kesepakatan/$id'
-  id: '__root__' | '/' | '/buat' | '/kesepakatan/$id'
+  to:
+    | '/'
+    | '/masuk'
+    | '/penyewa'
+    | '/verifikasi'
+    | '/pemilik/buat'
+    | '/pemilik'
+    | '/perjanjian/$id/checkin'
+    | '/perjanjian/$id/checkout'
+    | '/perjanjian/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/masuk'
+    | '/penyewa'
+    | '/verifikasi'
+    | '/pemilik/buat'
+    | '/pemilik/'
+    | '/perjanjian/$id/checkin'
+    | '/perjanjian/$id/checkout'
+    | '/perjanjian/$id/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  BuatRoute: typeof BuatRoute
-  KesepakatanIdRoute: typeof KesepakatanIdRoute
+  MasukRoute: typeof MasukRoute
+  PenyewaRoute: typeof PenyewaRoute
+  VerifikasiRoute: typeof VerifikasiRoute
+  PemilikBuatRoute: typeof PemilikBuatRoute
+  PemilikIndexRoute: typeof PemilikIndexRoute
+  PerjanjianIdCheckinRoute: typeof PerjanjianIdCheckinRoute
+  PerjanjianIdCheckoutRoute: typeof PerjanjianIdCheckoutRoute
+  PerjanjianIdIndexRoute: typeof PerjanjianIdIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -68,18 +156,60 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/buat': {
-      id: '/buat'
-      path: '/buat'
-      fullPath: '/buat'
-      preLoaderRoute: typeof BuatRouteImport
+    '/masuk': {
+      id: '/masuk'
+      path: '/masuk'
+      fullPath: '/masuk'
+      preLoaderRoute: typeof MasukRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/kesepakatan/$id': {
-      id: '/kesepakatan/$id'
-      path: '/kesepakatan/$id'
-      fullPath: '/kesepakatan/$id'
-      preLoaderRoute: typeof KesepakatanIdRouteImport
+    '/penyewa': {
+      id: '/penyewa'
+      path: '/penyewa'
+      fullPath: '/penyewa'
+      preLoaderRoute: typeof PenyewaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/verifikasi': {
+      id: '/verifikasi'
+      path: '/verifikasi'
+      fullPath: '/verifikasi'
+      preLoaderRoute: typeof VerifikasiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pemilik/': {
+      id: '/pemilik/'
+      path: '/pemilik'
+      fullPath: '/pemilik/'
+      preLoaderRoute: typeof PemilikIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pemilik/buat': {
+      id: '/pemilik/buat'
+      path: '/pemilik/buat'
+      fullPath: '/pemilik/buat'
+      preLoaderRoute: typeof PemilikBuatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/perjanjian/$id/': {
+      id: '/perjanjian/$id/'
+      path: '/perjanjian/$id'
+      fullPath: '/perjanjian/$id/'
+      preLoaderRoute: typeof PerjanjianIdIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/perjanjian/$id/checkin': {
+      id: '/perjanjian/$id/checkin'
+      path: '/perjanjian/$id/checkin'
+      fullPath: '/perjanjian/$id/checkin'
+      preLoaderRoute: typeof PerjanjianIdCheckinRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/perjanjian/$id/checkout': {
+      id: '/perjanjian/$id/checkout'
+      path: '/perjanjian/$id/checkout'
+      fullPath: '/perjanjian/$id/checkout'
+      preLoaderRoute: typeof PerjanjianIdCheckoutRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -87,8 +217,14 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  BuatRoute: BuatRoute,
-  KesepakatanIdRoute: KesepakatanIdRoute,
+  MasukRoute: MasukRoute,
+  PenyewaRoute: PenyewaRoute,
+  VerifikasiRoute: VerifikasiRoute,
+  PemilikBuatRoute: PemilikBuatRoute,
+  PemilikIndexRoute: PemilikIndexRoute,
+  PerjanjianIdCheckinRoute: PerjanjianIdCheckinRoute,
+  PerjanjianIdCheckoutRoute: PerjanjianIdCheckoutRoute,
+  PerjanjianIdIndexRoute: PerjanjianIdIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -8,3 +8,8 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+
+## KosProof rules
+- All data access goes through `src/lib/kosproof/store.ts` (service layer, localStorage for now) so it can later be swapped for a backend / Solana program without touching pages.
+- Wallets are detected via Wallet Standard (`WalletProvider wallets={[]}`), devnet only; never request private keys or seed phrases.
+- Only hashes, public keys, statuses and timestamps are meant for chain; photos/notes stay off-chain.

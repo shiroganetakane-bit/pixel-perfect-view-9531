@@ -8,6 +8,9 @@ import {
 } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
+import { SolanaProvider } from "@/components/kosproof/SolanaProvider";
+import { AppShell } from "@/components/kosproof/AppShell";
+import { Toaster } from "@/components/ui/sonner";
 import appCss from "../styles.css?url";
 
 function NotFoundComponent() {
@@ -37,17 +40,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "KosProof — Kesepakatan Sewa Kos Dua Pihak" },
+      { title: "KosProof — Bukti Kondisi Kamar Kos" },
       {
         name: "description",
         content:
-          "Buat kesepakatan sewa kos yang dikonfirmasi pemilik dan penyewa, dengan sidik digital SHA-256 sebagai bukti isi tidak berubah.",
+          "Catat kondisi kamar kos saat check-in dan check-out sebagai bukti bersama yang ditandatangani penyewa dan pemilik.",
       },
-      { property: "og:title", content: "KosProof — Kesepakatan Sewa Kos Dua Pihak" },
+      { property: "og:title", content: "KosProof — Bukti Kondisi Kamar Kos" },
       {
         property: "og:description",
         content:
-          "Buat kesepakatan sewa kos yang dikonfirmasi pemilik dan penyewa, dengan sidik digital SHA-256 sebagai bukti isi tidak berubah.",
+          "Catat kondisi kamar kos saat check-in dan check-out sebagai bukti bersama yang ditandatangani penyewa dan pemilik.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -91,7 +94,12 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <SolanaProvider>
+        <AppShell>
+          <Outlet />
+        </AppShell>
+        <Toaster />
+      </SolanaProvider>
     </QueryClientProvider>
   );
 }
