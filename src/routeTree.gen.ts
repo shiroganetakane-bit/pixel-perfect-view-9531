@@ -10,53 +10,33 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as BuatRouteImport } from './routes/buat'
-import { Route as KesepakatanIdRouteImport } from './routes/kesepakatan/$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const BuatRoute = BuatRouteImport.update({
-  id: '/buat',
-  path: '/buat',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const KesepakatanIdRoute = KesepakatanIdRouteImport.update({
-  id: '/kesepakatan/$id',
-  path: '/kesepakatan/$id',
-  getParentRoute: () => rootRouteImport,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/buat': typeof BuatRoute
-  '/kesepakatan/$id': typeof KesepakatanIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/buat': typeof BuatRoute
-  '/kesepakatan/$id': typeof KesepakatanIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/buat': typeof BuatRoute
-  '/kesepakatan/$id': typeof KesepakatanIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/buat' | '/kesepakatan/$id'
+  fullPaths: '/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/buat' | '/kesepakatan/$id'
-  id: '__root__' | '/' | '/buat' | '/kesepakatan/$id'
+  to: '/'
+  id: '__root__' | '/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  BuatRoute: typeof BuatRoute
-  KesepakatanIdRoute: typeof KesepakatanIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -68,27 +48,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/buat': {
-      id: '/buat'
-      path: '/buat'
-      fullPath: '/buat'
-      preLoaderRoute: typeof BuatRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/kesepakatan/$id': {
-      id: '/kesepakatan/$id'
-      path: '/kesepakatan/$id'
-      fullPath: '/kesepakatan/$id'
-      preLoaderRoute: typeof KesepakatanIdRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  BuatRoute: BuatRoute,
-  KesepakatanIdRoute: KesepakatanIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
