@@ -1,162 +1,74 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { ArrowRight, FileText, ShieldCheck, Users } from "lucide-react";
-import {
-  loadAgreements,
-  formatRupiah,
-  statusLabel,
-  type Agreement,
-} from "@/lib/agreements";
+import { Camera, FileSignature, PenLine, SearchCheck } from "lucide-react";
+import { useSession } from "@/hooks/use-kosproof";
+
+const T = "KosProof — Bukti Kondisi Kamar Kos";
+const D = "Catat kondisi kamar saat check-in dan check-out, ditandatangani penyewa dan pemilik, agar urusan uang jaminan selesai berdasarkan bukti.";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "KosProof — Kesepakatan Sewa Kos Dua Pihak" },
-      {
-        name: "description",
-        content:
-          "Buat kesepakatan sewa kos yang dikonfirmasi pemilik dan penyewa, dengan sidik digital sebagai bukti isi tidak berubah.",
-      },
-      { property: "og:title", content: "KosProof — Kesepakatan Sewa Kos Dua Pihak" },
-      {
-        property: "og:description",
-        content:
-          "Buat kesepakatan sewa kos yang dikonfirmasi pemilik dan penyewa, dengan sidik digital sebagai bukti isi tidak berubah.",
-      },
+      { title: T },
+      { name: "description", content: D },
+      { property: "og:title", content: T },
+      { property: "og:description", content: D },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: Index,
+  component: Landing,
 });
 
-function Index() {
-  const [items, setItems] = useState<Agreement[]>([]);
+const STEPS = [
+  { icon: FileSignature, t: "Buat perjanjian", d: "Pemilik membuat perjanjian sewa, penyewa memeriksa dan menyetujuinya dari dompetnya." },
+  { icon: Camera, t: "Foto kondisi kamar", d: "Saat masuk dan keluar, foto kasur, lemari, kamar mandi, dan dinding. Setiap foto diberi sidik unik." },
+  { icon: PenLine, t: "Tanda tangani bersama", d: "Kedua pihak menandatangani bukti. Jika ada potongan jaminan, alasannya tercatat dan bisa dicek siapa saja." },
+];
 
-  useEffect(() => {
-    setItems(loadAgreements());
-  }, []);
-
-  const aktif = items.filter((a) => a.status === "aktif").length;
-  const menunggu = items.filter((a) => a.status === "menunggu").length;
-
+function Landing() {
+  const { wallet, role } = useSession();
+  const dash = role === "pemilik" ? "/pemilik" : role === "penyewa" ? "/penyewa" : "/masuk";
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b border-border">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-5 py-4">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="h-6 w-6 text-primary" />
-            <span className="font-display text-xl font-semibold tracking-tight">
-              KosProof
-            </span>
-          </div>
-          <Link
-            to="/buat"
-            className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Buat Kesepakatan
+    <div>
+      <section className="py-6 md:py-12">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-accent">Uang jaminan kos, tanpa ribut</p>
+        <h1 className="font-display text-4xl font-semibold leading-tight tracking-tight md:text-6xl">
+          Bukti kondisi kamar
+          <br /> yang disepakati berdua.
+        </h1>
+        <p className="mt-5 max-w-xl text-muted-foreground">
+          Sering terjadi: saat keluar kos, jaminan dipotong karena "kerusakan" yang sebenarnya sudah ada sejak awal. Tanpa foto
+          bersama, tidak ada yang bisa membuktikan. KosProof mencatat kondisi kamar sebagai bukti yang ditandatangani kedua pihak.
+        </p>
+        <div className="mt-8 flex flex-wrap gap-3">
+          <Link to={wallet ? dash : "/masuk"} className="inline-flex min-h-11 items-center rounded-full bg-primary px-6 text-sm font-semibold text-primary-foreground">
+            {wallet ? "Buka dasbor" : "Hubungkan dompet"}
+          </Link>
+          <Link to="/verifikasi" className="inline-flex min-h-11 items-center gap-2 rounded-full border border-border px-6 text-sm font-semibold">
+            <SearchCheck className="h-4 w-4" /> Cek keaslian bukti
           </Link>
         </div>
-      </header>
+      </section>
 
-      <main className="mx-auto max-w-4xl px-5 py-10">
-        <section className="mb-10">
-          <p className="mb-2 text-sm font-medium uppercase tracking-widest text-accent-foreground/70">
-            Prototype MVP-B
-          </p>
-          <h1 className="font-display text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
-            Kesepakatan sewa kos,
-            <br />
-            disepakati dua pihak.
-          </h1>
-          <p className="mt-4 max-w-xl text-muted-foreground">
-            Pemilik kos membuat kesepakatan, penyewa memeriksa dan
-            mengonfirmasi. Setiap kesepakatan punya sidik digital (hash
-            SHA-256) — kalau isinya diubah diam-diam, sidiknya berubah.
-          </p>
-        </section>
-
-        <section className="mb-10 grid grid-cols-3 gap-3">
-          <div className="rounded-xl border border-border bg-card p-4">
-            <FileText className="mb-2 h-5 w-5 text-muted-foreground" />
-            <p className="font-display text-2xl font-semibold">{items.length}</p>
-            <p className="text-xs text-muted-foreground">Total kesepakatan</p>
-          </div>
-          <div className="rounded-xl border border-border bg-card p-4">
-            <ShieldCheck className="mb-2 h-5 w-5 text-primary" />
-            <p className="font-display text-2xl font-semibold">{aktif}</p>
-            <p className="text-xs text-muted-foreground">Aktif</p>
-          </div>
-          <div className="rounded-xl border border-border bg-card p-4">
-            <Users className="mb-2 h-5 w-5 text-muted-foreground" />
-            <p className="font-display text-2xl font-semibold">{menunggu}</p>
-            <p className="text-xs text-muted-foreground">Menunggu konfirmasi</p>
-          </div>
-        </section>
-
-        <section>
-          <h2 className="mb-4 font-display text-xl font-semibold">
-            Daftar kesepakatan
-          </h2>
-          {items.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-border bg-card/50 p-10 text-center">
-              <p className="text-muted-foreground">
-                Belum ada kesepakatan. Mulai dengan membuat yang pertama.
-              </p>
-              <Link
-                to="/buat"
-                className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-              >
-                Buat kesepakatan <ArrowRight className="h-4 w-4" />
-              </Link>
+      <section className="mt-6">
+        <h2 className="mb-4 font-display text-2xl font-semibold">Cara kerja</h2>
+        <div className="grid gap-4 md:grid-cols-3">
+          {STEPS.map((s, i) => (
+            <div key={s.t} className="rounded-2xl border border-border bg-card p-5">
+              <div className="mb-4 flex items-center justify-between">
+                <s.icon className="h-6 w-6 text-primary" />
+                <span className="font-display text-3xl font-semibold text-muted-foreground/40">{i + 1}</span>
+              </div>
+              <p className="font-semibold">{s.t}</p>
+              <p className="mt-1 text-sm text-muted-foreground">{s.d}</p>
             </div>
-          ) : (
-            <ul className="space-y-3">
-              {items.map((a) => (
-                <li key={a.id}>
-                  <Link
-                    to="/kesepakatan/$id"
-                    params={{ id: a.id }}
-                    className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/40"
-                  >
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs text-muted-foreground">
-                          {a.kode}
-                        </span>
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                            a.status === "aktif"
-                              ? "bg-primary/10 text-primary"
-                              : a.status === "ditolak"
-                                ? "bg-destructive/10 text-destructive"
-                                : "bg-secondary text-secondary-foreground"
-                          }`}
-                        >
-                          {statusLabel(a.status)}
-                        </span>
-                      </div>
-                      <p className="mt-1 truncate font-medium">
-                        {a.kamar.namaKos} — Kamar {a.kamar.nomorKamar}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {a.pemilik.nama} ↔ {a.penyewa.nama} ·{" "}
-                        {formatRupiah(a.hargaPerBulan)}/bulan
-                      </p>
-                    </div>
-                    <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        <footer className="mt-16 border-t border-border pt-6 text-xs text-muted-foreground">
-          Prototype — data tersimpan di browser ini saja. Sidik digital
-          dihitung dengan SHA-256 di perangkat Anda.
-        </footer>
-      </main>
+          ))}
+        </div>
+        <p className="mt-6 text-xs text-muted-foreground">
+          Prototype memakai jaringan uji Solana (devnet) dan data contoh — tidak ada uang sungguhan. Foto dan nama tidak pernah
+          dikirim ke blockchain; yang dicatat hanya sidik foto, alamat dompet, status, dan waktu.
+        </p>
+      </section>
     </div>
   );
 }
