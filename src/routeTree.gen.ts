@@ -10,33 +10,73 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as MasukRouteImport } from './routes/masuk'
+import { Route as PenyewaRouteImport } from './routes/penyewa'
+import { Route as PemilikIndexRouteImport } from './routes/pemilik/index'
+import { Route as PemilikBuatRouteImport } from './routes/pemilik/buat'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MasukRoute = MasukRouteImport.update({
+  id: '/masuk',
+  path: '/masuk',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PenyewaRoute = PenyewaRouteImport.update({
+  id: '/penyewa',
+  path: '/penyewa',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PemilikIndexRoute = PemilikIndexRouteImport.update({
+  id: '/pemilik/',
+  path: '/pemilik/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PemilikBuatRoute = PemilikBuatRouteImport.update({
+  id: '/pemilik/buat',
+  path: '/pemilik/buat',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/masuk': typeof MasukRoute
+  '/penyewa': typeof PenyewaRoute
+  '/pemilik/buat': typeof PemilikBuatRoute
+  '/pemilik/': typeof PemilikIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/masuk': typeof MasukRoute
+  '/penyewa': typeof PenyewaRoute
+  '/pemilik/buat': typeof PemilikBuatRoute
+  '/pemilik': typeof PemilikIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/masuk': typeof MasukRoute
+  '/penyewa': typeof PenyewaRoute
+  '/pemilik/buat': typeof PemilikBuatRoute
+  '/pemilik/': typeof PemilikIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/masuk' | '/penyewa' | '/pemilik/buat' | '/pemilik/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/masuk' | '/penyewa' | '/pemilik/buat' | '/pemilik'
+  id: '__root__' | '/' | '/masuk' | '/penyewa' | '/pemilik/buat' | '/pemilik/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  MasukRoute: typeof MasukRoute
+  PenyewaRoute: typeof PenyewaRoute
+  PemilikBuatRoute: typeof PemilikBuatRoute
+  PemilikIndexRoute: typeof PemilikIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +88,43 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/masuk': {
+      id: '/masuk'
+      path: '/masuk'
+      fullPath: '/masuk'
+      preLoaderRoute: typeof MasukRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/penyewa': {
+      id: '/penyewa'
+      path: '/penyewa'
+      fullPath: '/penyewa'
+      preLoaderRoute: typeof PenyewaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pemilik/': {
+      id: '/pemilik/'
+      path: '/pemilik'
+      fullPath: '/pemilik/'
+      preLoaderRoute: typeof PemilikIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pemilik/buat': {
+      id: '/pemilik/buat'
+      path: '/pemilik/buat'
+      fullPath: '/pemilik/buat'
+      preLoaderRoute: typeof PemilikBuatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  MasukRoute: MasukRoute,
+  PenyewaRoute: PenyewaRoute,
+  PemilikBuatRoute: PemilikBuatRoute,
+  PemilikIndexRoute: PemilikIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
