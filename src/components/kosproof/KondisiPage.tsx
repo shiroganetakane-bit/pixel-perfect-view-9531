@@ -180,7 +180,7 @@ function SigRow({ label, t }: { label: string; t: TandaTangan | null }) {
   );
 }
 
-function Foto({ title, f }: { title: string; f?: FotoBukti }) {
+function Foto({ title, f }: { title: string; f?: FotoBukti | undefined }) {
   return (
     <div>
       <p className="mb-1 text-xs font-medium text-muted-foreground">{title}</p>
