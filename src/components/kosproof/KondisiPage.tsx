@@ -34,7 +34,7 @@ export function KondisiPage({ id, fase }: { id: string; fase: Fase }) {
   );
 
   if (a.status !== "aktif" && !rec) return <>{back}<Empty title="Perjanjian belum aktif">Penyewa perlu menyetujui perjanjian terlebih dahulu.</Empty></>;
-  if (fase === "checkout" && !a.checkin?.tandaPemilik && !rec)
+  if (fase === "checkout" && (!a.checkin?.tandaPemilik || !a.checkin?.tandaPenyewa) && !rec)
     return <>{back}<Empty title="Check-in belum selesai">Foto check-in harus ditandatangani kedua pihak dulu.</Empty></>;
 
   async function onFile(area: Area, file: File | undefined) {
@@ -55,10 +55,14 @@ export function KondisiPage({ id, fase }: { id: string; fase: Fase }) {
 
   async function onSubmit() {
     setErr(null);
-    const fotos: FotoBukti[] = AREAS.filter((ar) => draft[ar]).map((ar) => ({ area: ar, ...draft[ar]!, catatan: draft[ar]!.catatan.slice(0, 300) }));
+    if (!wallet) return;
+    const fotos: FotoBukti[] = AREAS.flatMap((ar) => {
+      const photo = draft[ar];
+      return photo ? [{ area: ar, ...photo, catatan: photo.catatan.slice(0, 300) }] : [];
+    });
     setBusy("submit");
     try {
-      await submitKondisi(id, wallet!, fase, fotos);
+      await submitKondisi(id, wallet, fase, fotos);
       toast.success("Foto tersimpan. Sekarang tanda tangani buktinya.");
     } catch (e) {
       setErr(errMsg(e));
@@ -68,12 +72,12 @@ export function KondisiPage({ id, fase }: { id: string; fase: Fase }) {
   }
 
   async function onSign() {
-    if (!rec) return;
+    if (!rec || !wallet || !a) return;
     setErr(null);
     setBusy("sign");
     try {
-      const sig = await signText(ringkasanText(a!, fase, rec.ringkasanHash));
-      await signKondisi(id, wallet!, fase, sig);
+      const sig = await signText(ringkasanText(a, fase, rec.ringkasanHash));
+      await signKondisi(id, wallet, fase, sig);
       toast.success("Bukti berhasil ditandatangani.");
     } catch (e) {
       setErr(errMsg(e));
@@ -121,13 +125,16 @@ export function KondisiPage({ id, fase }: { id: string; fase: Fase }) {
                     maxLength={300}
                     value={d?.catatan ?? ""}
                     disabled={!d}
-                    onChange={(e) => setDraft((x) => ({ ...x, [ar]: { ...x[ar]!, catatan: e.target.value } }))}
+                    onChange={(e) => {
+                      const catatan = e.target.value;
+                      setDraft((x) => { const photo = x[ar]; return photo ? { ...x, [ar]: { ...photo, catatan } } : x; });
+                    }}
                   />
                 </Card>
               );
             })}
           </div>
-          <Button className="mt-6 w-full sm:w-auto" loading={busy === "submit"} disabled={Object.keys(draft).length === 0} onClick={onSubmit}>
+          <Button className="mt-6 w-full sm:w-auto" loading={busy === "submit"} disabled={busy !== null || Object.keys(draft).length === 0} onClick={onSubmit}>
             Simpan foto {label.toLowerCase()}
           </Button>
         </>

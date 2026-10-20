@@ -55,8 +55,10 @@ function Detail() {
     try {
       await fn();
       toast.success(ok);
+      return true;
     } catch (e) {
       setErr(errMsg(e));
+      return false;
     } finally {
       setBusy(null);
     }
@@ -90,10 +92,10 @@ function Detail() {
         <Card className="mb-4 border-primary/40">
           <p className="font-semibold">Periksa isi perjanjian di bawah, lalu berikan persetujuan.</p>
           <div className="mt-3 flex flex-wrap gap-2">
-            <Button loading={busy === "ok"} onClick={() => run("ok", () => respondAgreement(a.id, wallet!, true), "Perjanjian disetujui")}>
+            <Button loading={busy === "ok"} onClick={() => run("ok", () => respondAgreement(a.id, wallet ?? "", true), "Perjanjian disetujui")}>
               <CheckCircle2 className="h-4 w-4" /> Setujui perjanjian
             </Button>
-            <Button variant="outline" loading={busy === "no"} onClick={() => run("no", () => respondAgreement(a.id, wallet!, false), "Perjanjian ditolak")}>
+            <Button variant="outline" loading={busy === "no"} onClick={() => run("no", () => respondAgreement(a.id, wallet ?? "", false), "Perjanjian ditolak")}>
               Tolak
             </Button>
           </div>
@@ -147,21 +149,24 @@ function DepositCard({
   a: Agreement;
   wallet: string | null;
   busy: string | null;
-  run: (k: string, fn: () => Promise<unknown>, ok: string) => Promise<void>;
+  run: (k: string, fn: () => Promise<unknown>, ok: string) => Promise<boolean>;
   setErr: (s: string | null) => void;
 }) {
   const isOwner = wallet === a.ownerWallet;
   const isTenant = wallet === a.tenantWallet;
   const [open, setOpen] = useState(false);
   const [foto, setFoto] = useState<{ hash: string; preview: string } | null>(null);
-  const kembali = a.deposit - (a.depositStatus !== "ditahan" && a.potongan ? a.potongan.jumlah : 0);
+  const kembali = a.deposit - (["disetujui", "dikembalikan"].includes(a.depositStatus ?? "") && a.potongan ? a.potongan.jumlah : 0);
 
   async function onFoto(file?: File) {
     if (!file) return;
     const v = validateImage(file);
     if (v) return setErr(v);
-    const [hash, preview] = await Promise.all([sha256File(file), makePreview(file)]);
-    setFoto({ hash, preview });
+    try {
+      const [hash, preview] = await Promise.all([sha256File(file), makePreview(file)]);
+      setFoto({ hash, preview });
+      setErr(null);
+    } catch (e) { setErr(errMsg(e)); }
   }
 
   function onAjukan(e: FormEvent<HTMLFormElement>) {
@@ -170,9 +175,9 @@ function DepositCard({
     if (!foto) return setErr("Lampirkan foto bukti kerusakan.");
     run(
       "ajukan",
-      () => ajukanPotongan(a.id, wallet!, { jumlah: Number(f.get("jumlah")), alasan: String(f.get("alasan") ?? "").trim().slice(0, 300), fotoHash: foto.hash, fotoPreview: foto.preview }),
+      () => ajukanPotongan(a.id, wallet ?? "", { jumlah: Number(f.get("jumlah")), alasan: String(f.get("alasan") ?? "").trim().slice(0, 300), fotoHash: foto.hash, fotoPreview: foto.preview }),
       "Potongan diajukan ke penyewa",
-    ).then(() => setOpen(false));
+    ).then((ok) => { if (ok) setOpen(false); });
   }
 
   return (
@@ -183,8 +188,11 @@ function DepositCard({
       </div>
       <p className="text-sm text-muted-foreground">
         Jaminan {formatRupiah(a.deposit)}
-        {a.depositStatus !== "ditahan" && ` · dikembalikan ${formatRupiah(kembali)}`}
+        {a.depositStatus === "dikembalikan" && ` · dikembalikan ${formatRupiah(kembali)}`}
+        {a.depositStatus === "disetujui" && ` · akan dikembalikan ${formatRupiah(kembali)}`}
       </p>
+
+      <p className="mt-2 text-xs text-muted-foreground">Simulasi pencatatan jaminan; tidak ada pemindahan uang.</p>
 
       {a.potongan && a.depositStatus !== "ditahan" && (
         <div className="mt-4 grid gap-3 rounded-lg bg-muted p-3 sm:grid-cols-[160px_1fr]">
@@ -202,14 +210,14 @@ function DepositCard({
           <Button variant="outline" onClick={() => setOpen(true)}>Ajukan potongan</Button>
         )}
         {isOwner && canMove(a.depositStatus, "dikembalikan") && (
-          <Button loading={busy === "kembali"} onClick={() => run("kembali", () => kembalikanDeposit(a.id, wallet!), "Jaminan ditandai dikembalikan")}>
+          <Button loading={busy === "kembali"} onClick={() => run("kembali", () => kembalikanDeposit(a.id, wallet ?? ""), "Jaminan ditandai dikembalikan")}>
             Tandai dikembalikan ({formatRupiah(kembali)})
           </Button>
         )}
         {isTenant && a.depositStatus === "diajukan" && (
           <>
-            <Button loading={busy === "setuju"} onClick={() => run("setuju", () => tanggapiPotongan(a.id, wallet!, true), "Potongan disetujui")}>Setujui potongan</Button>
-            <Button variant="outline" loading={busy === "tolak"} onClick={() => run("tolak", () => tanggapiPotongan(a.id, wallet!, false), "Potongan ditolak")}>Tolak potongan</Button>
+            <Button loading={busy === "setuju"} onClick={() => run("setuju", () => tanggapiPotongan(a.id, wallet ?? "", true), "Potongan disetujui")}>Setujui potongan</Button>
+            <Button variant="outline" loading={busy === "tolak"} onClick={() => run("tolak", () => tanggapiPotongan(a.id, wallet ?? "", false), "Potongan ditolak")}>Tolak potongan</Button>
           </>
         )}
       </div>
