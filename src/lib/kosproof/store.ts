@@ -241,6 +241,7 @@ export async function verifyAgreement(a: Agreement) {
   let audit: "valid" | "invalid" | "legacy" = "valid";
   for (let i = 0; i < a.events.length; i++) {
     const e = a.events[i];
+    if (!e) { audit = "invalid"; continue; }
     if (e.previousHash === undefined) { if (audit !== "invalid") audit = "legacy"; continue; }
     const expected = await sha256Text(JSON.stringify({ id: a.id, aksi: e.aksi, wallet: e.wallet, waktu: e.waktu, data: e.data, previousHash: e.previousHash }));
     if (expected !== e.hash || e.previousHash !== (a.events[i - 1]?.hash ?? "")) audit = "invalid";

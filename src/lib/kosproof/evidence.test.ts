@@ -70,8 +70,11 @@ describe("integritas bukti KosProof", () => {
     expect((await verifyAgreement(original)).audit).toBe("valid");
     const modified = structuredClone(original);
     if (!modified.checkin) throw new Error("Missing checkin");
-    modified.checkin.fotos[0].catatan = "Berubah";
-    modified.events[0].aksi = "Dipalsukan";
+    const firstPhoto = modified.checkin.fotos[0];
+    const firstEvent = modified.events[0];
+    if (!firstPhoto || !firstEvent) throw new Error("Missing evidence");
+    firstPhoto.catatan = "Berubah";
+    firstEvent.aksi = "Dipalsukan";
     const result = await verifyAgreement(modified);
     expect(result.audit).toBe("invalid");
     expect(result.conditions[0].summary).toBe(false);
