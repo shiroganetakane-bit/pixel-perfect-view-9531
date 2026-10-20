@@ -77,7 +77,7 @@ describe("integritas bukti KosProof", () => {
     firstEvent.aksi = "Dipalsukan";
     const result = await verifyAgreement(modified);
     expect(result.audit).toBe("invalid");
-    expect(result.conditions[0].summary).toBe(false);
+    expect(result.conditions.find((r) => r.fase === "checkin")?.summary).toBe(false);
   });
   it("potongan wajib memiliki foto bukti valid", async () => {
     const a = await active();

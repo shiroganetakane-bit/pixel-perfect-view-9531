@@ -48,7 +48,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <span className="rounded-full bg-muted px-2.5 py-1 text-xs">{wallet ? shortKey(wallet) : "Devnet"}</span>
       </header>
 
-      <main className="mx-auto w-full max-w-4xl flex-1 px-4 pb-28 pt-6 md:px-8 md:pb-10 md:pt-10">{children}</main>
+      <main className="mx-auto w-full min-w-0 max-w-4xl flex-1 px-4 pb-28 pt-6 md:px-8 md:pb-10 md:pt-10">{children}</main>
 
       <nav className="fixed inset-x-0 bottom-0 z-20 flex border-t border-border bg-card md:hidden">
         {items.map((it) => (
