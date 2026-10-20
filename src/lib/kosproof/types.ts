@@ -51,6 +51,8 @@ export type AuditEvent = {
   wallet: string;
   waktu: string;
   hash: string;
+  previousHash?: string;
+  data?: unknown;
 };
 
 export type Agreement = {

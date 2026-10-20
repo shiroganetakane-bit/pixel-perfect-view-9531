@@ -10,7 +10,7 @@ export default defineConfig({
   vite: {
     resolve: {
       // web3.js is shared by the wallet adapter. Workers need the browser transport.
-      alias: { "rpc-websockets": "rpc-websockets/dist/index.browser.mjs" },
+      alias: { "rpc-websockets": new URL("./node_modules/rpc-websockets/dist/index.browser.mjs", import.meta.url).pathname },
     },
   },
   tanstackStart: {
