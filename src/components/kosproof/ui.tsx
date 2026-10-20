@@ -6,7 +6,7 @@ import { DEPOSIT_LABEL, STATUS_LABEL } from "@/lib/kosproof/format";
 import type { AgreementStatus, DepositStatus } from "@/lib/kosproof/types";
 
 export function Card({ className, children }: { className?: string; children: ReactNode }) {
-  return <div className={cn("rounded-2xl border border-border bg-card p-5", className)}>{children}</div>;
+  return <div className={cn("min-w-0 rounded-2xl border border-border bg-card p-5", className)}>{children}</div>;
 }
 
 export function Button({

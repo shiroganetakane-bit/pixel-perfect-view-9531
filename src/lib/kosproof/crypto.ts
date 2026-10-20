@@ -1,4 +1,17 @@
+import bs58 from "bs58";
+import { ed25519 } from "@noble/curves/ed25519";
+
 export const MAX_FOTO_BYTES = 5 * 1024 * 1024;
+
+export function verifyWalletSignature(wallet: string, message: string, signature: string) {
+  try {
+    return ed25519.verify(bs58.decode(signature), new TextEncoder().encode(message), bs58.decode(wallet));
+  } catch {
+    return false;
+  }
+}
+
+export const isSha256 = (value: string) => /^[a-f0-9]{64}$/.test(value);
 
 function toHex(buf: ArrayBuffer) {
   return Array.from(new Uint8Array(buf))
@@ -31,7 +44,13 @@ export function makePreview(file: File, max = 800): Promise<string> {
       const c = document.createElement("canvas");
       c.width = Math.round(img.width * scale);
       c.height = Math.round(img.height * scale);
-      c.getContext("2d")!.drawImage(img, 0, 0, c.width, c.height);
+      const context = c.getContext("2d");
+      if (!context) {
+        URL.revokeObjectURL(url);
+        reject(new Error("Gambar tidak bisa diproses."));
+        return;
+      }
+      context.drawImage(img, 0, 0, c.width, c.height);
       URL.revokeObjectURL(url);
       resolve(c.toDataURL("image/jpeg", 0.7));
     };
@@ -49,5 +68,5 @@ export function shortKey(k: string | null | undefined) {
 }
 
 export function isSolanaAddress(s: string) {
-  return /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(s);
+  try { return bs58.decode(s).length === 32; } catch { return false; }
 }

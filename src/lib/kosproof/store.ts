@@ -1,6 +1,6 @@
 // Lapisan service. Saat ini memakai localStorage; nanti fungsi-fungsi ini bisa diganti
 // dengan panggilan backend / program Solana tanpa mengubah halaman.
-import { sha256Text } from "./crypto";
+import { isSha256, isSolanaAddress, sha256Text, verifyWalletSignature } from "./crypto";
 import type {
   Agreement,
   AuditEvent,
@@ -55,8 +55,9 @@ function save(a: Agreement) {
 
 async function withEvent(a: Agreement, aksi: string, wallet: string, data: unknown) {
   const waktu = new Date().toISOString();
-  const hash = await sha256Text(JSON.stringify({ id: a.id, aksi, wallet, waktu, data }));
-  const ev: AuditEvent = { id: crypto.randomUUID(), aksi, wallet, waktu, hash };
+  const previousHash = a.events.at(-1)?.hash ?? "";
+  const hash = await sha256Text(JSON.stringify({ id: a.id, aksi, wallet, waktu, data, previousHash }));
+  const ev: AuditEvent = { id: crypto.randomUUID(), aksi, wallet, waktu, hash, data, previousHash };
   return save({ ...a, events: [...a.events, ev] });
 }
 
@@ -86,7 +87,10 @@ export async function createAgreement(
   owner: string,
   input: Pick<Agreement, "tenantWallet" | "namaKos" | "nomorKamar" | "mulai" | "selesai" | "deposit">,
 ) {
-  if (!(input.deposit > 0)) throw new Error("Nominal deposit harus lebih dari 0.");
+  if (!Number.isSafeInteger(input.deposit) || !(input.deposit > 0)) throw new Error("Nominal deposit harus berupa Rupiah bulat lebih dari 0.");
+  if (!isSolanaAddress(owner) || !isSolanaAddress(input.tenantWallet)) throw new Error("Alamat dompet Solana tidak valid.");
+  if (!input.namaKos.trim() || !input.nomorKamar.trim()) throw new Error("Nama kos dan nomor kamar wajib diisi.");
+  if (![input.mulai, input.selesai].every((d) => /^\d{4}-\d{2}-\d{2}$/.test(d) && Number.isFinite(Date.parse(d)) && new Date(d).toISOString().slice(0, 10) === d)) throw new Error("Tanggal sewa tidak valid.");
   if (input.tenantWallet === owner) throw new Error("Alamat penyewa tidak boleh sama dengan pemilik.");
   if (input.selesai <= input.mulai) throw new Error("Tanggal selesai harus setelah tanggal mulai.");
   const a: Agreement = {
@@ -117,16 +121,20 @@ export async function respondAgreement(id: string, wallet: string, setuju: boole
 
 // ---------- Kondisi kamar ----------
 export function ringkasanText(a: Agreement, fase: Fase, ringkasanHash: string) {
-  return `KosProof ${a.kode}\nBukti ${fase === "checkin" ? "check-in" : "check-out"}\nSidik bukti: ${ringkasanHash}`;
+  return `KosProof ${a.kode}\nID: ${a.id}\nBukti ${fase === "checkin" ? "check-in" : "check-out"}\nSidik bukti: ${ringkasanHash}`;
 }
+
+export const hashKondisi = (fotos: FotoBukti[]) => sha256Text(fotos.map((f) => `${f.area}:${f.hash}:${f.catatan}`).join("|"));
 
 export async function submitKondisi(id: string, wallet: string, fase: Fase, fotos: FotoBukti[]) {
   const a = must(id);
   if (wallet !== a.ownerWallet && wallet !== a.tenantWallet) throw new Error("Anda bukan pihak perjanjian ini.");
   if (a.status !== "aktif") throw new Error("Perjanjian belum aktif.");
   if (fotos.length === 0) throw new Error("Unggah minimal satu foto.");
-  if (fase === "checkout" && !a.checkin?.tandaPemilik) throw new Error("Selesaikan check-in dulu.");
-  const ringkasanHash = await sha256Text(fotos.map((f) => `${f.area}:${f.hash}:${f.catatan}`).join("|"));
+  if (a[fase]) throw new Error("Bukti sudah dicatat dan tidak boleh ditimpa.");
+  if (new Set(fotos.map((f) => f.area)).size !== fotos.length || fotos.some((f) => !["kasur", "lemari", "kamar_mandi", "dinding"].includes(f.area) || !isSha256(f.hash) || !f.preview.startsWith("data:image/") || f.catatan.length > 300)) throw new Error("Data foto bukti tidak valid.");
+  if (fase === "checkout" && (!a.checkin?.tandaPemilik || !a.checkin?.tandaPenyewa)) throw new Error("Check-in harus ditandatangani kedua pihak dulu.");
+  const ringkasanHash = await hashKondisi(fotos);
   const rec: CatatanKondisi = {
     fotos,
     ringkasanHash,
@@ -142,6 +150,13 @@ export async function signKondisi(id: string, wallet: string, fase: Fase, signat
   const a = must(id);
   const rec = a[fase];
   if (!rec) throw new Error("Belum ada foto untuk ditandatangani.");
+  if (a.status !== "aktif") throw new Error("Perjanjian tidak aktif.");
+  if (wallet !== a.ownerWallet && wallet !== a.tenantWallet) throw new Error("Anda bukan pihak perjanjian ini.");
+  if (wallet === a.ownerWallet ? rec.tandaPemilik : rec.tandaPenyewa) throw new Error("Anda sudah menandatangani bukti ini.");
+  if (await hashKondisi(rec.fotos) !== rec.ringkasanHash) throw new Error("Isi bukti berubah; tanda tangan dibatalkan.");
+  if (!verifyWalletSignature(wallet, ringkasanText(a, fase, rec.ringkasanHash), signature)) throw new Error("Tanda tangan dompet tidak valid untuk bukti ini.");
+  const current = must(id);
+  if (current[fase]?.ringkasanHash !== rec.ringkasanHash || current.events.at(-1)?.hash !== a.events.at(-1)?.hash) throw new Error("Bukti berubah. Muat ulang sebelum menandatangani.");
   const t = { wallet, signature, waktu: new Date().toISOString() };
   let next: CatatanKondisi;
   if (wallet === a.ownerWallet) next = { ...rec, tandaPemilik: t };
@@ -164,7 +179,8 @@ export async function ajukanPotongan(id: string, wallet: string, p: Omit<Potonga
   const a = must(id);
   if (wallet !== a.ownerWallet) throw new Error("Hanya pemilik yang bisa mengajukan potongan.");
   if (!canMove(a.depositStatus, "diajukan")) throw new Error("Status deposit tidak memungkinkan.");
-  if (!(p.jumlah > 0) || p.jumlah > a.deposit) throw new Error("Jumlah potongan harus antara 1 dan nilai deposit.");
+  if (!Number.isSafeInteger(p.jumlah) || !(p.jumlah > 0) || p.jumlah > a.deposit) throw new Error("Jumlah potongan harus antara 1 dan nilai deposit.");
+  if (!isSha256(p.fotoHash) || !p.fotoPreview.startsWith("data:image/")) throw new Error("Lampirkan foto bukti kerusakan yang valid.");
   if (!p.alasan.trim()) throw new Error("Alasan potongan wajib diisi.");
   const potongan = { ...p, diajukanPada: new Date().toISOString() };
   return withEvent({ ...a, depositStatus: "diajukan", potongan }, `Pemilik mengajukan potongan deposit`, wallet, { jumlah: p.jumlah, alasan: p.alasan, fotoHash: p.fotoHash });
@@ -210,4 +226,25 @@ export function findByHash(hash: string) {
 export function findByIdOrKode(q: string) {
   const s = q.trim().toLowerCase();
   return read().find((a) => a.id.toLowerCase() === s || a.kode.toLowerCase() === s) ?? null;
+}
+
+export async function verifyAgreement(a: Agreement) {
+  const conditions = await Promise.all((["checkin", "checkout"] as const).map(async (fase) => {
+    const rec = a[fase];
+    if (!rec) return { fase, summary: null, owner: null, tenant: null };
+    const message = ringkasanText(a, fase, rec.ringkasanHash);
+    const summary = await hashKondisi(rec.fotos) === rec.ringkasanHash;
+    const owner = rec.tandaPemilik ? rec.tandaPemilik.wallet === a.ownerWallet && verifyWalletSignature(a.ownerWallet, message, rec.tandaPemilik.signature) : null;
+    const tenant = rec.tandaPenyewa ? rec.tandaPenyewa.wallet === a.tenantWallet && verifyWalletSignature(a.tenantWallet, message, rec.tandaPenyewa.signature) : null;
+    return { fase, summary, owner, tenant };
+  }));
+  let audit: "valid" | "invalid" | "legacy" = "valid";
+  for (let i = 0; i < a.events.length; i++) {
+    const e = a.events[i];
+    if (!e) { audit = "invalid"; continue; }
+    if (e.previousHash === undefined) { if (audit !== "invalid") audit = "legacy"; continue; }
+    const expected = await sha256Text(JSON.stringify({ id: a.id, aksi: e.aksi, wallet: e.wallet, waktu: e.waktu, data: e.data, previousHash: e.previousHash }));
+    if (expected !== e.hash || e.previousHash !== (a.events[i - 1]?.hash ?? "")) audit = "invalid";
+  }
+  return { conditions, audit };
 }

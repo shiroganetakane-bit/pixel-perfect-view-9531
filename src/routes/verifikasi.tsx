@@ -2,9 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { Timeline } from "@/components/kosproof/Timeline";
-import { Button, Card, DepositBadge, ErrorBox, Field, Mono, PageTitle, StatusBadge, inputCls } from "@/components/kosproof/ui";
+import { Button, Card, DepositBadge, ErrorBox, Field, Mono, PageTitle, StatusBadge, inputCls, errMsg } from "@/components/kosproof/ui";
 import { sha256File, validateImage } from "@/lib/kosproof/crypto";
-import { findByHash, findByIdOrKode } from "@/lib/kosproof/store";
+import { findByHash, findByIdOrKode, verifyAgreement } from "@/lib/kosproof/store";
 import type { Agreement } from "@/lib/kosproof/types";
 
 const T = "Cek Keaslian Bukti — KosProof";
@@ -32,13 +32,25 @@ function Verifikasi() {
   const [hasil, setHasil] = useState<Hasil | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [integrity, setIntegrity] = useState<Awaited<ReturnType<typeof verifyAgreement>> | null>(null);
 
-  function onId(e: FormEvent<HTMLFormElement>) {
+  async function onId(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setErr(null);
     const q = String(new FormData(e.currentTarget).get("q") ?? "").trim();
-    if (!q) return setErr("Masukkan ID atau kode perjanjian.");
-    setHasil({ kind: "id", a: findByIdOrKode(q), q });
+    if (!q) return setErr("Masukkan ID, kode, atau sidik bukti.");
+    setBusy(true);
+    setHasil(null);
+    setIntegrity(null);
+    try {
+      if (/^[a-f0-9]{64}$/i.test(q)) {
+        setHasil({ kind: "foto", hash: q.toLowerCase(), matches: findByHash(q.toLowerCase()) });
+      } else {
+        const a = findByIdOrKode(q);
+        if (a) setIntegrity(await verifyAgreement(a));
+        setHasil({ kind: "id", a, q });
+      }
+    } catch (e) { setErr(errMsg(e)); } finally { setBusy(false); }
   }
 
   async function onFile(file?: File) {
@@ -47,9 +59,13 @@ function Verifikasi() {
     const v = validateImage(file);
     if (v) return setErr(v);
     setBusy(true);
+    setHasil(null);
+    setIntegrity(null);
     try {
       const hash = await sha256File(file);
       setHasil({ kind: "foto", hash, matches: findByHash(hash) });
+    } catch (e) {
+      setErr(errMsg(e));
     } finally {
       setBusy(false);
     }
@@ -57,14 +73,14 @@ function Verifikasi() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <PageTitle title="Cek keaslian bukti" sub="Siapa pun bisa memeriksa — tidak perlu dompet." />
+      <PageTitle title="Cek keaslian bukti" sub="Tanpa dompet · catatan tersimpan di browser ini" />
       <div className="grid gap-4 sm:grid-cols-2">
         <Card>
           <form onSubmit={onId} className="space-y-3">
-            <Field label="ID atau kode perjanjian">
+            <Field label="ID, kode perjanjian, atau sidik bukti">
               <input name="q" className={`${inputCls} font-mono`} placeholder="KP-1234" />
             </Field>
-            <Button type="submit" className="w-full">Cari</Button>
+            <Button type="submit" loading={busy} className="w-full">Cari</Button>
           </form>
         </Card>
         <Card>
@@ -108,6 +124,17 @@ function Verifikasi() {
               </div>
               <p className="mb-1 text-sm">Sidik check-in: {hasil.a.checkin ? <Mono>{hasil.a.checkin.ringkasanHash}</Mono> : "—"}</p>
               <p className="mb-4 text-sm">Sidik check-out: {hasil.a.checkout ? <Mono>{hasil.a.checkout.ringkasanHash}</Mono> : "—"}</p>
+              {integrity && <div className="mb-4 space-y-2 border-y border-border py-3 text-sm">
+                <p className="font-semibold">Pemeriksaan bukti dan tanda tangan</p>
+                {integrity.conditions.map((r) => <div key={r.fase}>
+                  <p className="font-medium">{r.fase === "checkin" ? "Check-in" : "Check-out"}</p>
+                  <p>Ringkasan: {r.summary === null ? "Belum dicatat" : r.summary ? "Cocok" : "Isi bukti berubah"}</p>
+                  <p>Pemilik: {r.owner === null ? "Belum ditandatangani" : r.owner ? "Tanda tangan valid" : "Tanda tangan tidak valid"}</p>
+                  <p>Penyewa: {r.tenant === null ? "Belum ditandatangani" : r.tenant ? "Tanda tangan valid" : "Tanda tangan tidak valid"}</p>
+                </div>)}
+                <p>Riwayat: {integrity.audit === "valid" ? "Rangkaian hash cocok" : integrity.audit === "legacy" ? "Catatan lama belum memiliki pemeriksaan lengkap" : "Rangkaian hash berubah"}</p>
+                <p className="text-xs text-muted-foreground">Pemeriksaan terhadap catatan browser ini, bukan bukti pencatatan blockchain.</p>
+              </div>}
               <Timeline events={hasil.a.events} />
             </>
           ) : (
